@@ -31,6 +31,16 @@ func New(name string, creds map[string]string) (Provider, error) {
 			return nil, fmt.Errorf("dnsmadeeasy: missing api_secret credential")
 		}
 		return NewDNSMadeEasy(key, secret), nil
+	case "fortigate":
+		host, ok := creds["host"]
+		if !ok || host == "" {
+			return nil, fmt.Errorf("fortigate: missing host credential")
+		}
+		token, ok := creds["api_token"]
+		if !ok || token == "" {
+			return nil, fmt.Errorf("fortigate: missing api_token credential")
+		}
+		return NewFortiGate(host, token, creds["vdom"], creds["insecure_skip_verify"] == "true"), nil
 	case "test":
 		return NewTest(), nil
 	default:

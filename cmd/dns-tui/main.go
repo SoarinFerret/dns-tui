@@ -66,12 +66,14 @@ func isNotExist(err error) bool {
 }
 
 var providers = []struct {
-	name   string
-	fields []string
+	name           string
+	fields         []string
+	optionalFields []string
 }{
-	{"cloudflare", []string{"api_token"}},
-	{"godaddy", []string{"api_key", "api_secret"}},
-	{"dnsmadeeasy", []string{"api_key", "api_secret"}},
+	{name: "cloudflare", fields: []string{"api_token"}},
+	{name: "godaddy", fields: []string{"api_key", "api_secret"}},
+	{name: "dnsmadeeasy", fields: []string{"api_key", "api_secret"}},
+	{name: "fortigate", fields: []string{"host", "api_token"}, optionalFields: []string{"vdom", "insecure_skip_verify"}},
 }
 
 func promptProfile() (config.Profile, error) {
@@ -87,7 +89,7 @@ func promptProfile() (config.Profile, error) {
 		fmt.Printf("  %d) %s\n", i+1, p.name)
 	}
 
-	choiceStr, err := prompt(reader, "Select provider (1-3): ")
+	choiceStr, err := prompt(reader, fmt.Sprintf("Select provider (1-%d): ", len(providers)))
 	if err != nil {
 		return config.Profile{}, err
 	}
@@ -105,6 +107,15 @@ func promptProfile() (config.Profile, error) {
 			return config.Profile{}, err
 		}
 		creds[field] = val
+	}
+	for _, field := range selected.optionalFields {
+		val, err := prompt(reader, fmt.Sprintf("%s (optional): ", field))
+		if err != nil {
+			return config.Profile{}, err
+		}
+		if val != "" {
+			creds[field] = val
+		}
 	}
 
 	return config.Profile{

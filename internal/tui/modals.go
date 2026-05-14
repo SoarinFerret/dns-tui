@@ -12,11 +12,15 @@ import (
 
 var (
 	recordTypes   = []string{"A", "AAAA", "CNAME", "MX", "TXT", "NS", "SRV", "CAA"}
-	providerTypes = []string{"cloudflare", "godaddy", "dnsmadeeasy"}
+	providerTypes = []string{"cloudflare", "godaddy", "dnsmadeeasy", "fortigate"}
 	providerCreds = map[string][]string{
 		"cloudflare":  {"api_token"},
 		"godaddy":     {"api_key", "api_secret"},
 		"dnsmadeeasy": {"api_key", "api_secret"},
+		"fortigate":   {"host", "api_token"},
+	}
+	providerOptionalCreds = map[string][]string{
+		"fortigate": {"vdom", "insecure_skip_verify"},
 	}
 )
 
@@ -124,25 +128,36 @@ func showProfileForm(a *App) {
 	form := tview.NewForm()
 
 	selectedProvider := providerTypes[0]
-	credFields := map[string]*tview.InputField{}
+	type credField struct {
+		input    *tview.InputField
+		label    string
+		optional bool
+	}
+	credFields := map[string]credField{}
 
-	// Build credential fields for the initial provider
 	buildCredFields := func(form *tview.Form, provName string) {
-		// Remove old credential fields
-		for label := range credFields {
-			idx := form.GetFormItemIndex(label)
+		for _, cf := range credFields {
+			idx := form.GetFormItemIndex(cf.label)
 			if idx >= 0 {
 				form.RemoveFormItem(idx)
 			}
 		}
-		credFields = map[string]*tview.InputField{}
+		credFields = map[string]credField{}
 
-		// Insert credential fields after Name (index 1) and Provider (index 2)
 		for _, field := range providerCreds[provName] {
+			label := field
 			input := tview.NewInputField().
-				SetLabel(field).
+				SetLabel(label).
 				SetFieldWidth(40)
-			credFields[field] = input
+			credFields[field] = credField{input: input, label: label}
+			form.AddFormItem(input)
+		}
+		for _, field := range providerOptionalCreds[provName] {
+			label := field + " (optional)"
+			input := tview.NewInputField().
+				SetLabel(label).
+				SetFieldWidth(40)
+			credFields[field] = credField{input: input, label: label, optional: true}
 			form.AddFormItem(input)
 		}
 	}
@@ -164,9 +179,12 @@ func showProfileForm(a *App) {
 		}
 
 		creds := make(map[string]string)
-		for field, input := range credFields {
-			val := input.GetText()
+		for field, cf := range credFields {
+			val := cf.input.GetText()
 			if val == "" {
+				if cf.optional {
+					continue
+				}
 				a.statusBar.SetError(a.app, fmt.Sprintf("%s is required", field))
 				return
 			}

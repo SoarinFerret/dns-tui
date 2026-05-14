@@ -7,7 +7,7 @@ A terminal UI for managing DNS records across multiple cloud providers, written 
 ## Features
 
 - Three-pane layout: profiles, domains, records
-- Multiple provider support: **Cloudflare**, **GoDaddy**, **DNSMadeEasy**
+- Multiple provider support: **Cloudflare**, **GoDaddy**, **DNSMadeEasy**, **FortiGate** (built-in DNS server)
 - Multiple profiles per provider (e.g. separate prod and personal Cloudflare accounts)
 - Full CRUD on records: `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `NS`, `SRV`, `CAA`
 - Form fields adapt to the selected record type (priority for `MX`/`SRV`, weight/port/target for `SRV`)
@@ -68,6 +68,14 @@ profiles:
     credentials:
       api_key: "key-here"
       api_secret: "secret-here"
+
+  - name: "FortiGate Home"
+    provider: fortigate
+    credentials:
+      host: "https://fortigate.example.com"
+      api_token: "fg-token-here"
+      vdom: "root"                  # optional, defaults to "root"
+      insecure_skip_verify: "true"  # optional, for self-signed certs
 ```
 
 ### Credential requirements
@@ -77,6 +85,7 @@ profiles:
 | Cloudflare   | `api_token`                  | Scoped API token with Zone:Read / DNS:Edit    |
 | GoDaddy      | `api_key`, `api_secret`      | Production keys from developer.godaddy.com    |
 | DNSMadeEasy  | `api_key`, `api_secret`      | Used for HMAC request signing                 |
+| FortiGate    | `host`, `api_token`          | Optional `vdom` (default `root`) and `insecure_skip_verify` for self-signed certs. Uses `/api/v2/cmdb/system/dns-database`. TXT/SRV/CAA not supported by the FortiOS schema. |
 
 The config file holds plaintext credentials. Protect it with `chmod 600 ~/.config/dns-tui/config.yaml`.
 
@@ -145,6 +154,7 @@ internal/
     cloudflare.go
     godaddy.go
     dnsmadeeasy.go
+    fortigate.go
   tui/                tview UI components
 ```
 

@@ -71,6 +71,33 @@ func TestNew_DNSMadeEasyMissingSecret(t *testing.T) {
 	}
 }
 
+func TestNew_FortiGate(t *testing.T) {
+	p, err := provider.New("fortigate", map[string]string{
+		"host":      "https://fortigate.example.com",
+		"api_token": "tok",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p == nil {
+		t.Fatal("expected non-nil provider")
+	}
+}
+
+func TestNew_FortiGateMissingHost(t *testing.T) {
+	_, err := provider.New("fortigate", map[string]string{"api_token": "tok"})
+	if err == nil {
+		t.Fatal("expected error for missing host")
+	}
+}
+
+func TestNew_FortiGateMissingToken(t *testing.T) {
+	_, err := provider.New("fortigate", map[string]string{"host": "https://fortigate.example.com"})
+	if err == nil {
+		t.Fatal("expected error for missing api_token")
+	}
+}
+
 func TestNew_TestProvider(t *testing.T) {
 	p, err := provider.New("test", nil)
 	if err != nil {

@@ -36,6 +36,7 @@ internal/
     cloudflare.go
     godaddy.go
     dnsmadeeasy.go
+    fortigate.go
   tui/                # tview UI components
     app.go            # Main application, layout assembly
     profiles.go       # Left sidebar — profile list
@@ -91,6 +92,7 @@ Supported providers:
 - **Cloudflare** — uses API token auth (`Authorization: Bearer <token>`)
 - **GoDaddy** — uses API key + secret
 - **DNSMadeEasy** — uses API key + secret with HMAC request signing
+- **FortiGate** — FortiOS REST API at `/api/v2/cmdb/system/dns-database`, bearer-token auth. A profile points at one VDOM on one FortiGate instance; each DNS database zone surfaces as a Domain and entries within it as Records. MX/NS targets are stored in the entry's `hostname` field at the zone apex, so the provider surfaces them as `Name="@"`. TXT/SRV/CAA are not supported by the FortiOS dns-database schema.
 
 Use `net/http` directly for provider API calls rather than pulling in provider-specific SDKs.
 
@@ -122,6 +124,14 @@ profiles:
     credentials:
       api_key: "key-here"
       api_secret: "secret-here"
+
+  - name: "FortiGate Home"
+    provider: fortigate
+    credentials:
+      host: "https://fortigate.example.com"
+      api_token: "fg-token-here"
+      vdom: "root"                # optional, defaults to "root"
+      insecure_skip_verify: "true" # optional, for self-signed certs
 ```
 
 ## TUI Layout
